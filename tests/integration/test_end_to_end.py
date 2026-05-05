@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-from asn1crypto import pem, x509 as asn1_x509
+from asn1crypto import pem
+from asn1crypto import x509 as asn1_x509
 from pyhanko.pdf_utils.reader import PdfFileReader
 from pyhanko.sign.validation import validate_pdf_signature
 from pyhanko_certvalidator import ValidationContext
@@ -149,13 +150,9 @@ class TestEndToEnd:
             )
 
         a = _make_use_case().execute(
-            ShuffleAndReportRequest(
-                csv_path=str(csv_path), pdf_path=str(tmp_path / "a.pdf")
-            )
+            ShuffleAndReportRequest(csv_path=str(csv_path), pdf_path=str(tmp_path / "a.pdf"))
         )
         b = _make_use_case().execute(
-            ShuffleAndReportRequest(
-                csv_path=str(csv_path), pdf_path=str(tmp_path / "b.pdf")
-            )
+            ShuffleAndReportRequest(csv_path=str(csv_path), pdf_path=str(tmp_path / "b.pdf"))
         )
         assert a.seed == b.seed

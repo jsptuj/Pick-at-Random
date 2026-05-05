@@ -49,10 +49,8 @@ class PyHankoSigner:
                 pfx_file=p12_path,
                 passphrase=p12_password.encode("utf-8"),
             )
-        except Exception as exc:  # noqa: BLE001 - pyhanko raises a wide range
-            raise SignerConfigError(
-                f"Failed to load PKCS#12 keystore: {exc}"
-            ) from exc
+        except Exception as exc:
+            raise SignerConfigError(f"Failed to load PKCS#12 keystore: {exc}") from exc
         if self._signer is None:
             raise SignerConfigError(
                 f"PKCS#12 keystore at {p12_path} did not yield a usable signer."
@@ -76,14 +74,12 @@ class PyHankoSigner:
                 writer = IncrementalPdfFileWriter(inf)
                 fields.append_signature_field(
                     writer,
-                    sig_field_spec=fields.SigFieldSpec(
-                        sig_field_name=self._field_name
-                    ),
+                    sig_field_spec=fields.SigFieldSpec(sig_field_name=self._field_name),
                 )
                 pdf_signer = signers.PdfSigner(self._meta, signer=self._signer)
                 signed_buffer = BytesIO()
                 pdf_signer.sign_pdf(writer, output=signed_buffer)
-        except Exception as exc:  # noqa: BLE001 - pyhanko raises broadly
+        except Exception as exc:
             raise SignerError(f"Failed to sign {pdf_path}: {exc}") from exc
 
         path.write_bytes(signed_buffer.getvalue())

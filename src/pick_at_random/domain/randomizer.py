@@ -20,15 +20,14 @@ class Randomizer(Protocol):
     the same row order. The seed is supplied by an :class:`NtpDraw`.
     """
 
-    def shuffle(self, dataset: Dataset, seed: int) -> tuple[Row, ...]:
-        ...
+    def shuffle(self, dataset: Dataset, seed: int) -> tuple[Row, ...]: ...  # pragma: no cover
 
 
 NTP_SEEDED_DESCRIPTION_SL: str = (
     "Naključno razvrščanje s pomočjo časovnega žiga, pridobljenega z "
     "uradnega strežnika NTP. Časovni žig se v polni ločljivosti pretvori "
     "v 64-bitno celo število (nanosekunde od epohe Unix) in se uporabi "
-    "kot seme generatorja Mersenne Twister, ki poganja Fisher–Yatesovo "
+    "kot seme generatorja Mersenne Twister, ki poganja Fisher-Yatesovo "
     "premešanje vrstic. Ob enakem semenu je razvrstitev v celoti "
     "ponovljiva; strežnik, surov časovni žig in seme so zapisani v tem "
     "poročilu."

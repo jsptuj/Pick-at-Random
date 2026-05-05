@@ -11,8 +11,8 @@ from pick_at_random.domain.models import Dataset, NtpDraw, ReportMetadata, Row
 from pick_at_random.domain.randomizer import NTP_SEEDED_DESCRIPTION_SL, Randomizer
 
 __all__ = [
-    "Dataset",
     "NTP_SEEDED_DESCRIPTION_SL",
+    "Dataset",
     "NtpDraw",
     "Randomizer",
     "ReportMetadata",

@@ -61,21 +61,17 @@ def signing_keystore(tmp_path: Path) -> SigningKeystore:
             ),
             critical=True,
         )
-        .add_extension(
-            x509.BasicConstraints(ca=False, path_length=None), critical=True
-        )
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         .sign(key, hashes.SHA256())
     )
 
-    password = "testpass"
+    password = "testpass"  # noqa: S105 - synthetic password for test PKCS#12
     p12_bytes = serialize_key_and_certificates(
         name=b"pick-at-random-test",
         key=key,
         cert=cert,
         cas=None,
-        encryption_algorithm=serialization.BestAvailableEncryption(
-            password.encode("utf-8")
-        ),
+        encryption_algorithm=serialization.BestAvailableEncryption(password.encode("utf-8")),
     )
     p12_path = tmp_path / "test.p12"
     p12_path.write_bytes(p12_bytes)

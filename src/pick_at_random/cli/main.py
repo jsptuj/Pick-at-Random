@@ -16,6 +16,7 @@ real environment variables override.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import sys
 from collections.abc import Callable, Mapping, Sequence
@@ -189,10 +190,8 @@ def _ensure_utf8_streams() -> None:
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if callable(reconfigure):
-            try:
+            with contextlib.suppress(Exception):
                 reconfigure(encoding="utf-8", errors="replace")
-            except Exception:  # noqa: BLE001 - non-critical hardening
-                pass
 
 
 def main(
@@ -220,7 +219,7 @@ def main(
         result = use_case.execute(
             ShuffleAndReportRequest(csv_path=args.csv_path, pdf_path=pdf_path)
         )
-    except Exception as exc:  # noqa: BLE001 - top-level boundary maps to exit code
+    except Exception as exc:  # noqa: BLE001 - top-level boundary, all errors mapped to exit codes
         message, exit_code = map_error_to_slovenian(exc)
         print(f"Napaka: {message}", file=err_stream)
         return exit_code

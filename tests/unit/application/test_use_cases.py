@@ -60,9 +60,7 @@ class TestHappyPath:
         )
         use_case, *_, time_source = _build_use_case(ds)
 
-        result = use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        result = use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert result.pdf_path == "/out.pdf"
         assert result.row_count == 5
@@ -76,9 +74,7 @@ class TestHappyPath:
         )
         use_case, _, randomizer, pdf_writer, _, time_source = _build_use_case(ds)
 
-        use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert len(pdf_writer.calls) == 1
         destination, written_rows, metadata = pdf_writer.calls[0]
@@ -98,9 +94,7 @@ class TestHappyPath:
         ds = Dataset(headers=("a",), rows=(Row(("x",)),))
         use_case, _, _, pdf_writer, signer, _ = _build_use_case(ds)
 
-        use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert pdf_writer.calls[0][0] == "/out.pdf"
         assert signer.calls == ["/out.pdf"]
@@ -109,9 +103,7 @@ class TestHappyPath:
         ds = Dataset(headers=("a",), rows=(Row(("x",)),))
         use_case, csv_reader, *_ = _build_use_case(ds)
 
-        use_case.execute(
-            ShuffleAndReportRequest(csv_path="/some/in.csv", pdf_path="/out.pdf")
-        )
+        use_case.execute(ShuffleAndReportRequest(csv_path="/some/in.csv", pdf_path="/out.pdf"))
 
         assert csv_reader.calls == ["/some/in.csv"]
 
@@ -119,9 +111,7 @@ class TestHappyPath:
         ds = Dataset(headers=("a",), rows=(Row(("x",)),))
         use_case, *_, time_source = _build_use_case(ds)
 
-        use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert time_source.calls == 1
 
@@ -148,9 +138,7 @@ class TestEdgeCases:
         ds = Dataset(headers=("name",), rows=())
         use_case, _, _, pdf_writer, signer, _ = _build_use_case(ds)
 
-        result = use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        result = use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert result.row_count == 0
         assert pdf_writer.calls[0][1] == ()
@@ -161,9 +149,7 @@ class TestEdgeCases:
         ds = Dataset(headers=("name",), rows=(only,))
         use_case, _, _, pdf_writer, _, _ = _build_use_case(ds)
 
-        use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert pdf_writer.calls[0][1] == (only,)
 
@@ -175,9 +161,7 @@ class TestEdgeCases:
         )
         use_case, _, _, pdf_writer, _, _ = _build_use_case(ds)
 
-        use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         written = pdf_writer.calls[0][1]
         assert Counter(written) == Counter(ds.rows)
@@ -210,9 +194,7 @@ class TestRequestAndResult:
         ds = Dataset(headers=("a",), rows=(Row(("x",)),))
         use_case, *_, time_source = _build_use_case(ds)
 
-        result = use_case.execute(
-            ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf")
-        )
+        result = use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
 
         assert result == result.__class__(
             pdf_path="/out.pdf",

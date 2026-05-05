@@ -57,9 +57,7 @@ class TestParseArgs:
         assert args.ntp_server is None
 
     def test_full_invocation(self) -> None:
-        args = parse_args(
-            ["a.csv", "--out", "b.pdf", "--ntp-server", "time.example"]
-        )
+        args = parse_args(["a.csv", "--out", "b.pdf", "--ntp-server", "time.example"])
         assert args.csv_path == "a.csv"
         assert args.out == "b.pdf"
         assert args.ntp_server == "time.example"
@@ -73,12 +71,8 @@ class TestResolvePdfPath:
 
     def test_uses_timestamped_default_when_out_missing(self) -> None:
         s = _settings(output_dir="/data/out")
-        result = resolve_pdf_path(
-            None, s, now=datetime(2026, 5, 5, 14, 32, 7)
-        )
-        assert (
-            result == str(Path("/data/out") / "pick-at-random_20260505-143207.pdf")
-        )
+        result = resolve_pdf_path(None, s, now=datetime(2026, 5, 5, 14, 32, 7))
+        assert result == str(Path("/data/out") / "pick-at-random_20260505-143207.pdf")
 
     def test_empty_out_falls_back_to_default(self) -> None:
         s = _settings(output_dir="/o")

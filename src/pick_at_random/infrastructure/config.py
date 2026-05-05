@@ -129,9 +129,7 @@ class Settings:
         return cls(
             signature_p12_path=_require(source, "SIGNATURE_P12_PATH"),
             signature_p12_password=_require(source, "SIGNATURE_P12_PASSWORD"),
-            signature_field_name=_optional(
-                source, "SIGNATURE_FIELD_NAME", "PickAtRandomSig1"
-            ),
+            signature_field_name=_optional(source, "SIGNATURE_FIELD_NAME", "PickAtRandomSig1"),
             signature_reason=_require(source, "SIGNATURE_REASON"),
             signature_location=_require(source, "SIGNATURE_LOCATION"),
             signature_contact=_require(source, "SIGNATURE_CONTACT"),

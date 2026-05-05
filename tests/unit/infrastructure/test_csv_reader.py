@@ -85,5 +85,5 @@ class TestSniffingCsvReader:
 
     def test_blank_header_raises(self, tmp_path: Path) -> None:
         path = _write(tmp_path, "blank.csv", "   \nfoo,bar\n")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="empty"):
             SniffingCsvReader().read(path)

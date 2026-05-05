@@ -58,9 +58,7 @@ class TestRandomizerProtocol:
         )
         impl = _SeededFisherYates()
         result = impl.shuffle(ds, seed=12345)
-        assert sorted(result, key=lambda r: r.values) == sorted(
-            ds.rows, key=lambda r: r.values
-        )
+        assert sorted(result, key=lambda r: r.values) == sorted(ds.rows, key=lambda r: r.values)
         assert len(result) == ds.row_count
 
     def test_empty_dataset_returns_empty_tuple(self) -> None:

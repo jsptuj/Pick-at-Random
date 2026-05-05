@@ -114,9 +114,7 @@ class ReportLabPdfWriter:
         ]
         doc.build(story)
 
-    def _metadata_table(
-        self, metadata: ReportMetadata, body: ParagraphStyle
-    ) -> Table:
+    def _metadata_table(self, metadata: ReportMetadata, body: ParagraphStyle) -> Table:
         local_human = self._format_local_time(metadata.local_iso_timestamp)
         rows: list[list[Paragraph]] = [
             [Paragraph(_LABEL_HOSTNAME, body), Paragraph(metadata.hostname, body)],
@@ -155,8 +153,7 @@ class ReportLabPdfWriter:
         data_rows: list[list[Paragraph]] = [header_cells]
         for index, row in enumerate(shuffled_rows, start=1):
             data_rows.append(
-                [Paragraph(str(index), body)]
-                + [Paragraph(cell, body) for cell in row.values]
+                [Paragraph(str(index), body)] + [Paragraph(cell, body) for cell in row.values]
             )
 
         table = Table(data_rows, repeatRows=1, hAlign="LEFT")
@@ -197,7 +194,5 @@ class ReportLabPdfWriter:
             dt = datetime.fromisoformat(iso_timestamp)
         except ValueError:
             return iso_timestamp
-        formatted = format_datetime(
-            dt, format="d. MMMM y, HH:mm", locale=self._locale
-        )
+        formatted = format_datetime(dt, format="d. MMMM y, HH:mm", locale=self._locale)
         return f"{formatted} ({iso_timestamp})"

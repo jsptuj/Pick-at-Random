@@ -58,17 +58,14 @@ class TestFetch:
         from datetime import UTC, datetime
 
         tx_time = 1_778_155_200.123_456
-        expected_iso = (
-            datetime.fromtimestamp(tx_time, tz=UTC)
-            .isoformat(timespec="microseconds")
-        )
+        expected_iso = datetime.fromtimestamp(tx_time, tz=UTC).isoformat(timespec="microseconds")
         client = _FakeClient(_FakeResponse(tx_time=tx_time))
         ts = NtpTimeSource(server="time.arnes.si", client=client)
 
         draw = ts.fetch()
 
         assert draw.server == "time.arnes.si"
-        assert draw.unix_nanoseconds == int(round(tx_time * 1_000_000_000))
+        assert draw.unix_nanoseconds == round(tx_time * 1_000_000_000)
         assert draw.seed == draw.unix_nanoseconds
         assert draw.iso_timestamp == expected_iso
         assert draw.iso_timestamp.endswith("+00:00")
@@ -87,13 +84,13 @@ class TestFetch:
     def test_translates_ntp_exception(self) -> None:
         client = _FakeClient(exc=ntplib.NTPException("timeout"))
         ts = NtpTimeSource(server="time.arnes.si", client=client)
-        with pytest.raises(NtpFetchError, match="time.arnes.si"):
+        with pytest.raises(NtpFetchError, match=r"time\.arnes\.si"):
             ts.fetch()
 
     def test_translates_os_error(self) -> None:
         client = _FakeClient(exc=OSError("dns lookup failed"))
         ts = NtpTimeSource(server="time.arnes.si", client=client)
-        with pytest.raises(NtpFetchError, match="time.arnes.si"):
+        with pytest.raises(NtpFetchError, match=r"time\.arnes\.si"):
             ts.fetch()
 
     def test_rejects_non_positive_timestamp(self) -> None:

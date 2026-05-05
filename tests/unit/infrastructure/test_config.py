@@ -105,7 +105,7 @@ class TestSettingsFromEnv:
     @pytest.mark.parametrize("raw", ["2", "5", "abc", "-1"])
     def test_invalid_ntp_version_raises(self, raw: str) -> None:
         env = _full_env(NTP_VERSION=raw)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="NTP_VERSION"):
             Settings.from_env(env)
 
     def test_blank_optional_falls_back_to_default(self) -> None:
@@ -126,7 +126,7 @@ class TestLoadDotenv:
 
     def test_strips_surrounding_quotes(self, tmp_path: Path) -> None:
         p = tmp_path / ".env"
-        p.write_text('A="hello world"\nB=\'plain\'\n', encoding="utf-8")
+        p.write_text("A=\"hello world\"\nB='plain'\n", encoding="utf-8")
         assert load_dotenv(p) == {"A": "hello world", "B": "plain"}
 
     def test_returns_empty_when_missing(self, tmp_path: Path) -> None:

@@ -39,9 +39,7 @@ class DeterministicRandomizer:
 
 @dataclass
 class RecordingPdfWriter:
-    calls: list[tuple[str, tuple[Row, ...], ReportMetadata]] = field(
-        default_factory=list
-    )
+    calls: list[tuple[str, tuple[Row, ...], ReportMetadata]] = field(default_factory=list)
 
     def write(
         self,

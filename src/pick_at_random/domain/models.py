@@ -77,9 +77,7 @@ class NtpDraw:
         if not self.server:
             raise ValueError("NtpDraw.server must be a non-empty hostname.")
         if self.unix_nanoseconds <= 0:
-            raise ValueError(
-                "NtpDraw.unix_nanoseconds must be a positive integer."
-            )
+            raise ValueError("NtpDraw.unix_nanoseconds must be a positive integer.")
         if not self.iso_timestamp:
             raise ValueError("NtpDraw.iso_timestamp must be non-empty.")
 

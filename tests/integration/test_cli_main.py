@@ -189,8 +189,7 @@ class TestCliMain:
 
         dotenv = tmp_path / ".env"
         env_lines = "\n".join(
-            f"{k}={v}"
-            for k, v in _env_for(signing_keystore, output_dir=tmp_path).items()
+            f"{k}={v}" for k, v in _env_for(signing_keystore, output_dir=tmp_path).items()
         )
         dotenv.write_text(env_lines + "\n", encoding="utf-8")
 

@@ -28,8 +28,7 @@ class NtpFetchError(RuntimeError):
 class _NtpClient(Protocol):
     def request(
         self, host: str, version: int = ..., port: str = ..., timeout: float = ...
-    ) -> ntplib.NTPStats:
-        ...
+    ) -> ntplib.NTPStats: ...
 
 
 class NtpTimeSource:
@@ -48,9 +47,7 @@ class NtpTimeSource:
         if version not in (3, 4):
             raise ValueError(f"version must be 3 or 4, got {version}.")
         if timeout_seconds <= 0:
-            raise ValueError(
-                f"timeout_seconds must be positive, got {timeout_seconds}."
-            )
+            raise ValueError(f"timeout_seconds must be positive, got {timeout_seconds}.")
         self._server = server
         self._version = version
         self._timeout = timeout_seconds
@@ -62,21 +59,14 @@ class NtpTimeSource:
                 self._server, version=self._version, timeout=self._timeout
             )
         except (ntplib.NTPException, OSError) as exc:
-            raise NtpFetchError(
-                f"NTP query failed for {self._server!r}: {exc}"
-            ) from exc
+            raise NtpFetchError(f"NTP query failed for {self._server!r}: {exc}") from exc
 
         tx_time = float(response.tx_time)
         if tx_time <= 0:
-            raise NtpFetchError(
-                f"NTP server {self._server!r} returned non-positive timestamp."
-            )
+            raise NtpFetchError(f"NTP server {self._server!r} returned non-positive timestamp.")
 
-        unix_nanoseconds = int(round(tx_time * 1_000_000_000))
-        iso_timestamp = (
-            datetime.fromtimestamp(tx_time, tz=UTC)
-            .isoformat(timespec="microseconds")
-        )
+        unix_nanoseconds = round(tx_time * 1_000_000_000)
+        iso_timestamp = datetime.fromtimestamp(tx_time, tz=UTC).isoformat(timespec="microseconds")
         return NtpDraw(
             server=self._server,
             unix_nanoseconds=unix_nanoseconds,
