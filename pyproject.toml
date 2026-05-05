@@ -69,8 +69,16 @@ disallow_any_generics = true
 no_implicit_reexport = true
 
 [[tool.mypy.overrides]]
-module = ["reportlab.*", "pyhanko.*", "pyhanko_certvalidator.*", "babel.*"]
+module = [
+    "reportlab.*",
+    "pyhanko.*",
+    "pyhanko_certvalidator.*",
+    "babel.*",
+    "ntplib",
+    "asn1crypto.*",
+]
 ignore_missing_imports = true
+
 
 [tool.pytest.ini_options]
 minversion = "8.0"
