@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pick-at-random"
+version = "0.1.0"
+description = "Console application that reads a CSV with dynamic headers and produces a randomly ordered, digitally signed PDF in Slovenian."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+    { name = "Javne službe Ptuj d.o.o." }
+]
+dependencies = [
+    "reportlab==4.5.0",
+    "pyHanko==0.35.0",
+    "Babel==2.18.0",
+    "tzdata==2026.2",
+    "ntplib==0.4.0",
+]
+
+[project.scripts]
+pick-at-random = "pick_at_random.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"pick_at_random" = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle / pyflakes
+    "I",             # isort
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "SIM",           # simplify
+    "RUF",           # ruff-specific
+    "S",             # bandit
+    "ANN",           # flake8-annotations
+    "PT",            # pytest-style
+]
+ignore = [
+    "ANN101",  # missing type annotation for self
+    "ANN102",  # missing type annotation for cls
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ANN"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["pick_at_random"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_any_generics = true
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = ["reportlab.*", "pyhanko.*", "pyhanko_certvalidator.*", "babel.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers --strict-config"
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "integration: integration tests that touch the filesystem or external libs",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["pick_at_random"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 90
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
