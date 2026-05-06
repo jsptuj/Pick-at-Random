@@ -27,10 +27,8 @@ NTP_SEEDED_DESCRIPTION_SL: str = (
     "Naključno razvrščanje s pomočjo časovnega žiga, pridobljenega z "
     "uradnega strežnika NTP. Časovni žig se v polni ločljivosti pretvori "
     "v 64-bitno celo število (nanosekunde od epohe Unix) in se uporabi "
-    "kot seme generatorja Mersenne Twister, ki poganja Fisher-Yatesovo "
-    "premešanje vrstic. Ob enakem semenu je razvrstitev v celoti "
-    "ponovljiva; strežnik, surov časovni žig in seme so zapisani v tem "
-    "poročilu."
+    "kot seme generatorja Mersenne Twister, ki poganja Fisher-Yatesovo premešanje vrstic."
+    "NTP strežnik, surov časovni žig in seme so zapisani v tem poročilu."
 )
 """Slovenian, audit-friendly description of the randomization workflow.
 
