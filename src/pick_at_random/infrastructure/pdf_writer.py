@@ -10,6 +10,9 @@ The output is a single A4 portrait document containing:
 * The shuffled rows rendered under the original CSV headers, with an
   ordinal "Zaporedna št." column prepended. The header row repeats on
   every page the table spans.
+* A trailing "Digitalni podpis" section (subject CN, issuer CN,
+  validity range) — placed at the very end of the document so the
+  results table follows immediately after the metadata.
 
 ReportLab's standard 14 PostScript fonts (Helvetica/Times/Courier) cover
 only WinAnsi, which lacks Č/č. The PDF therefore uses Bitstream Vera
@@ -42,7 +45,7 @@ from reportlab.platypus import (
 
 from pick_at_random.domain.models import ReportMetadata, Row
 
-_LABEL_TITLE = "Naključna razvrstitev"
+_LABEL_TITLE = "Naključna razvrstitev seznama - žreb"
 _LABEL_HOSTNAME = "Računalnik:"
 _LABEL_USERNAME = "Uporabnik:"
 _LABEL_LOCAL_TIME = "Čas izvedbe:"
@@ -157,15 +160,15 @@ class ReportLabPdfWriter:
             Spacer(1, 4 * mm),
             Paragraph(_LABEL_NTP_BLOCK, section_style),
             self._ntp_table(metadata, body_style),
+            Spacer(1, 6 * mm),
+            Paragraph(_LABEL_RESULTS, section_style),
+            self._results_block(metadata, shuffled_rows, body_style),
         ]
         cert_table = self._certificate_table(metadata, body_style)
         if cert_table is not None:
-            story.append(Spacer(1, 4 * mm))
+            story.append(Spacer(1, 6 * mm))
             story.append(Paragraph(_LABEL_CERT_BLOCK, section_style))
             story.append(cert_table)
-        story.append(Spacer(1, 6 * mm))
-        story.append(Paragraph(_LABEL_RESULTS, section_style))
-        story.append(self._results_block(metadata, shuffled_rows, body_style))
         doc.build(story)
 
     def _metadata_table(self, metadata: ReportMetadata, body: ParagraphStyle) -> Table:
