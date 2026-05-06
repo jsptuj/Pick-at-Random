@@ -45,10 +45,7 @@ select = [
     "S",             # bandit
     "ANN",           # flake8-annotations
     "PT",            # pytest-style
-]
-ignore = [
-    "ANN101",  # missing type annotation for self
-    "ANN102",  # missing type annotation for cls
+    "BLE",           # blind-except
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -69,8 +66,16 @@ disallow_any_generics = true
 no_implicit_reexport = true
 
 [[tool.mypy.overrides]]
-module = ["reportlab.*", "pyhanko.*", "pyhanko_certvalidator.*", "babel.*"]
+module = [
+    "reportlab.*",
+    "pyhanko.*",
+    "pyhanko_certvalidator.*",
+    "babel.*",
+    "ntplib",
+    "asn1crypto.*",
+]
 ignore_missing_imports = true
+
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -93,4 +98,6 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
+    # Protocol / abstract method bodies are never executed directly.
+    "^\\s*\\.\\.\\.\\s*$",
 ]

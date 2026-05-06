@@ -26,11 +26,17 @@ order.
 
 The PDF must contain:
 
-- Computer name (hostname).
-- Username of the OS user who executed the process.
+- Computer name (hostname). Omitted when running inside a container with
+  no `HOST_HOSTNAME` override.
+- Username of the OS user who executed the process. Same fallback rule
+  as hostname (`HOST_USERNAME` override).
+- Input CSV filename (basename only — no host paths).
 - Description of the randomization workflow that was used.
 - Date and time of execution (local timezone, ISO 8601).
 - NTP server queried, the raw NTP timestamp, and the derived integer seed.
+- Signing-certificate identity: subject CN, issuer CN, valid-from,
+  valid-to. Extracted from the PKCS#12 keystore at signer construction
+  time and rendered before the row table.
 - Original CSV headers, in order.
 - The randomized rows.
 - A valid digital signature embedded in the PDF.
@@ -83,8 +89,18 @@ The PDF must contain:
   - `SIGNATURE_P12_PASSWORD` — passphrase for the `.p12` file.
   - `SIGNATURE_FIELD_NAME` — name of the signature field (default: `PickAtRandomSig1`).
   - `SIGNATURE_REASON` — Slovenian reason string shown in the signature panel.
-  - `SIGNATURE_LOCATION` — signing location string.
-  - `SIGNATURE_CONTACT` — contact info for the signer.
+
+### 2.5 Host identity
+
+- Inside Docker `socket.gethostname()` returns the container ID and
+  `getpass.getuser()` returns the in-container service user. Neither is
+  useful on a report shown to humans.
+- The `HostInfo` adapter therefore prefers `HOST_HOSTNAME` /
+  `HOST_USERNAME` env vars (passed through by `docker-compose.yml` from
+  the operator's shell), falls back to `socket.gethostname()` /
+  `getpass.getuser()` only when the process is **not** running inside a
+  container, and otherwise returns `None`. The PDF omits the
+  corresponding row entirely rather than display a misleading value.
 
 ## 3. Non-functional requirements
 
@@ -165,8 +181,6 @@ SIGNATURE_P12_PATH=/run/secrets/signing.p12
 SIGNATURE_P12_PASSWORD=changeme
 SIGNATURE_FIELD_NAME=PickAtRandomSig1
 SIGNATURE_REASON=Naključno razvrščanje seznama
-SIGNATURE_LOCATION=Ptuj, Slovenija
-SIGNATURE_CONTACT=podpora@example.si
 
 # --- Output ---
 OUTPUT_DIR=/data/out
@@ -183,6 +197,10 @@ NTP_VERSION=4
 # --- Locale / formatting ---
 APP_LOCALE=sl_SI
 APP_TIMEZONE=Europe/Ljubljana
+
+# --- Host identity (optional; blank => row omitted from PDF) ---
+HOST_HOSTNAME=
+HOST_USERNAME=
 ```
 
 `.gitignore` must include at minimum:
