@@ -18,8 +18,6 @@ def _full_env(**overrides: str) -> dict[str, str]:
         "SIGNATURE_P12_PATH": "/secrets/sign.p12",
         "SIGNATURE_P12_PASSWORD": "topsecret",
         "SIGNATURE_REASON": "Naključno razvrščanje",
-        "SIGNATURE_LOCATION": "Ptuj",
-        "SIGNATURE_CONTACT": "x@example.si",
         "NTP_SERVER": "time.arnes.si",
     }
     base.update(overrides)
@@ -36,6 +34,8 @@ class TestSettingsFromEnv:
         assert s.ntp_version == 4
         assert s.app_locale == "sl_SI"
         assert s.app_timezone == "Europe/Ljubljana"
+        assert s.host_hostname is None
+        assert s.host_username is None
 
     def test_overrides_applied(self) -> None:
         env = _full_env(
@@ -46,6 +46,8 @@ class TestSettingsFromEnv:
             NTP_VERSION="3",
             APP_LOCALE="en_US",
             APP_TIMEZONE="UTC",
+            HOST_HOSTNAME="my-laptop",
+            HOST_USERNAME="alice",
         )
         s = Settings.from_env(env)
         assert s.signature_field_name == "OtherSig"
@@ -55,6 +57,13 @@ class TestSettingsFromEnv:
         assert s.ntp_version == 3
         assert s.app_locale == "en_US"
         assert s.app_timezone == "UTC"
+        assert s.host_hostname == "my-laptop"
+        assert s.host_username == "alice"
+
+    def test_blank_host_identity_normalises_to_none(self) -> None:
+        s = Settings.from_env(_full_env(HOST_HOSTNAME="", HOST_USERNAME=""))
+        assert s.host_hostname is None
+        assert s.host_username is None
 
     @pytest.mark.parametrize(
         "missing",
@@ -62,8 +71,6 @@ class TestSettingsFromEnv:
             "SIGNATURE_P12_PATH",
             "SIGNATURE_P12_PASSWORD",
             "SIGNATURE_REASON",
-            "SIGNATURE_LOCATION",
-            "SIGNATURE_CONTACT",
             "NTP_SERVER",
         ],
     )
@@ -79,8 +86,6 @@ class TestSettingsFromEnv:
             "SIGNATURE_P12_PATH",
             "SIGNATURE_P12_PASSWORD",
             "SIGNATURE_REASON",
-            "SIGNATURE_LOCATION",
-            "SIGNATURE_CONTACT",
             "NTP_SERVER",
         ],
     )

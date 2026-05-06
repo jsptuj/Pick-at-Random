@@ -31,8 +31,6 @@ def _settings(**overrides: object) -> Settings:
         "signature_p12_password": "x",
         "signature_field_name": "F",
         "signature_reason": "r",
-        "signature_location": "l",
-        "signature_contact": "c",
         "input_dir": "/in",
         "output_dir": "/out",
         "ntp_server": "time.arnes.si",
@@ -40,6 +38,8 @@ def _settings(**overrides: object) -> Settings:
         "ntp_version": 4,
         "app_locale": "sl_SI",
         "app_timezone": "Europe/Ljubljana",
+        "host_hostname": None,
+        "host_username": None,
     }
     base.update(overrides)
     return Settings(**base)  # type: ignore[arg-type]

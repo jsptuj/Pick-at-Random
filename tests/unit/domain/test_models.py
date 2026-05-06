@@ -115,11 +115,16 @@ class TestReportMetadata:
 
     @pytest.mark.parametrize(
         "field_name",
-        ["hostname", "username", "local_iso_timestamp", "workflow_description"],
+        ["local_iso_timestamp", "workflow_description"],
     )
     def test_rejects_empty_required_string(self, field_name: str) -> None:
         with pytest.raises(ValueError, match=field_name):
             self._valid_metadata(**{field_name: ""})
+
+    @pytest.mark.parametrize("field_name", ["hostname", "username"])
+    def test_allows_none_for_optional_identity_fields(self, field_name: str) -> None:
+        meta = self._valid_metadata(**{field_name: None})
+        assert getattr(meta, field_name) is None
 
     def test_rejects_empty_headers(self) -> None:
         with pytest.raises(ValueError, match="original_headers"):

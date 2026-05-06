@@ -9,6 +9,14 @@ services:
     user: "1000:1000"
     env_file:
       - .env
+    environment:
+      # Pass the docker-host identity through. Compose substitutes from the
+      # operator's shell at parse time. Windows hosts populate COMPUTERNAME
+      # and USERNAME; POSIX hosts populate HOSTNAME (often shell-only — set
+      # `export HOSTNAME` if blank) and USER. Anything still empty falls back
+      # to the .env value, then to None — the PDF row is then omitted.
+      HOST_HOSTNAME: "${HOST_HOSTNAME:-${COMPUTERNAME:-${HOSTNAME:-}}}"
+      HOST_USERNAME: "${HOST_USERNAME:-${USERNAME:-${USER:-}}}"
     volumes:
       # Inputs: mounted read-only so the container cannot mutate source CSVs.
       - ./data/in:/data/in:ro

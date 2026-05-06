@@ -88,6 +88,26 @@ class NtpDraw:
 
 
 @dataclass(frozen=True, slots=True)
+class CertificateInfo:
+    """Identity + validity of the signing certificate.
+
+    Held as plain strings so the domain layer stays free of any X.509 or
+    cryptographic library types. The CLI / infrastructure layer extracts
+    these fields from the loaded PKCS#12 keystore and hands the result
+    in for inclusion on the PDF.
+
+    Each field is optional because operator certificates from real CAs
+    occasionally omit a CN (rare) or use a different name attribute.
+    The PDF renders only the rows that actually carry a value.
+    """
+
+    subject_cn: str | None = None
+    issuer_cn: str | None = None
+    valid_from_iso: str | None = None
+    valid_to_iso: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ReportMetadata:
     """Everything the PDF needs to render its informational header.
 
@@ -96,18 +116,16 @@ class ReportMetadata:
     adapter. No infrastructure types leak into this dataclass.
     """
 
-    hostname: str
-    username: str
+    hostname: str | None
+    username: str | None
     local_iso_timestamp: str
     workflow_description: str
     ntp_draw: NtpDraw
     original_headers: tuple[str, ...] = field(default_factory=tuple)
+    source_filename: str | None = None
+    certificate_info: CertificateInfo | None = None
 
     def __post_init__(self) -> None:
-        if not self.hostname:
-            raise ValueError("ReportMetadata.hostname must be non-empty.")
-        if not self.username:
-            raise ValueError("ReportMetadata.username must be non-empty.")
         if not self.local_iso_timestamp:
             raise ValueError("ReportMetadata.local_iso_timestamp must be non-empty.")
         if not self.workflow_description:

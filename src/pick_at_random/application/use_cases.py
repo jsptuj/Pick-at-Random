@@ -23,10 +23,17 @@ from pick_at_random.domain.randomizer import Randomizer
 
 @dataclass(frozen=True, slots=True)
 class ShuffleAndReportRequest:
-    """Inputs to a single run."""
+    """Inputs to a single run.
+
+    ``source_filename`` is a presentational hint shown on the PDF (e.g.
+    ``Prijave-2026.csv``). The CLI populates it from ``csv_path``; the
+    use case does not synthesise one because the application layer must
+    not import path libraries.
+    """
 
     csv_path: str
     pdf_path: str
+    source_filename: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +89,8 @@ class ShuffleAndReportUseCase:
             workflow_description=self._workflow_description,
             ntp_draw=ntp_draw,
             original_headers=dataset.headers,
+            source_filename=request.source_filename,
+            certificate_info=self._signer.certificate_info(),
         )
 
         self._pdf_writer.write(

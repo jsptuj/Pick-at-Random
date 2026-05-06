@@ -107,6 +107,37 @@ class TestHappyPath:
 
         assert csv_reader.calls == ["/some/in.csv"]
 
+    def test_source_filename_threaded_into_metadata(self) -> None:
+        ds = Dataset(headers=("a",), rows=(Row(("x",)),))
+        use_case, _, _, pdf_writer, *_ = _build_use_case(ds)
+
+        use_case.execute(
+            ShuffleAndReportRequest(
+                csv_path="/some/in.csv",
+                pdf_path="/out.pdf",
+                source_filename="in.csv",
+            )
+        )
+        _, _, metadata = pdf_writer.calls[0]
+        assert metadata.source_filename == "in.csv"
+
+    def test_source_filename_defaults_to_none(self) -> None:
+        ds = Dataset(headers=("a",), rows=(Row(("x",)),))
+        use_case, _, _, pdf_writer, *_ = _build_use_case(ds)
+
+        use_case.execute(ShuffleAndReportRequest(csv_path="/some/in.csv", pdf_path="/out.pdf"))
+        _, _, metadata = pdf_writer.calls[0]
+        assert metadata.source_filename is None
+
+    def test_certificate_info_pulled_from_signer(self) -> None:
+        ds = Dataset(headers=("a",), rows=(Row(("x",)),))
+        use_case, _, _, pdf_writer, signer, _ = _build_use_case(ds)
+
+        use_case.execute(ShuffleAndReportRequest(csv_path="/in.csv", pdf_path="/out.pdf"))
+        _, _, metadata = pdf_writer.calls[0]
+
+        assert metadata.certificate_info == signer.cert
+
     def test_time_source_called_exactly_once(self) -> None:
         ds = Dataset(headers=("a",), rows=(Row(("x",)),))
         use_case, *_, time_source = _build_use_case(ds)

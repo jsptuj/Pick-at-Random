@@ -47,8 +47,6 @@ def _env_for(keystore: SigningKeystore, *, output_dir: Path) -> dict[str, str]:
         "SIGNATURE_P12_PATH": str(keystore.p12_path),
         "SIGNATURE_P12_PASSWORD": keystore.p12_password,
         "SIGNATURE_REASON": "Naključno razvrščanje seznama",
-        "SIGNATURE_LOCATION": "Ptuj, Slovenija",
-        "SIGNATURE_CONTACT": "podpora@example.si",
         "NTP_SERVER": "time.arnes.si",
         "OUTPUT_DIR": str(output_dir),
     }

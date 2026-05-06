@@ -137,8 +137,6 @@ def build_use_case(
         p12_password=settings.signature_p12_password,
         field_name=settings.signature_field_name,
         reason=settings.signature_reason,
-        location=settings.signature_location,
-        contact=settings.signature_contact,
     )
     return ShuffleAndReportUseCase(
         csv_reader=SniffingCsvReader(),
@@ -146,7 +144,10 @@ def build_use_case(
         pdf_writer=ReportLabPdfWriter(locale=settings.app_locale),
         signer=signer,
         clock=SystemClock(settings.app_timezone),
-        host_info=SystemHostInfo(),
+        host_info=SystemHostInfo(
+            host_hostname=settings.host_hostname,
+            host_username=settings.host_username,
+        ),
         time_source=time_source,
         workflow_description=NTP_SEEDED_DESCRIPTION_SL,
     )
@@ -217,7 +218,11 @@ def main(
             time_source_factory=time_source_factory,
         )
         result = use_case.execute(
-            ShuffleAndReportRequest(csv_path=args.csv_path, pdf_path=pdf_path)
+            ShuffleAndReportRequest(
+                csv_path=args.csv_path,
+                pdf_path=pdf_path,
+                source_filename=Path(args.csv_path).name or None,
+            )
         )
     except Exception as exc:  # noqa: BLE001 - top-level boundary, all errors mapped to exit codes
         message, exit_code = map_error_to_slovenian(exc)

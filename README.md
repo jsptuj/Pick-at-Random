@@ -113,8 +113,6 @@ Then set `SIGNATURE_P12_PASSWORD=changeme` in your `.env` and you're ready to ru
 | `SIGNATURE_P12_PASSWORD` | yes | — | Passphrase for the keystore. |
 | `SIGNATURE_FIELD_NAME` | no | `PickAtRandomSig1` | Name of the signature field embedded in the PDF. |
 | `SIGNATURE_REASON` | yes | — | Slovenian reason string shown in the signature panel. |
-| `SIGNATURE_LOCATION` | yes | — | Signing location string. |
-| `SIGNATURE_CONTACT` | yes | — | Contact info for the signer. |
 | `INPUT_DIR` | no | `/data/in` | Default input directory (informational). |
 | `OUTPUT_DIR` | no | `/data/out` | Where the timestamped PDF is written when `--out` is omitted. |
 | `NTP_SERVER` | yes | — | Hostname of the NTP server queried to seed the shuffle. |
@@ -122,6 +120,8 @@ Then set `SIGNATURE_P12_PASSWORD=changeme` in your `.env` and you're ready to ru
 | `NTP_VERSION` | no | `4` | SNTP protocol version (`3` or `4`). |
 | `APP_LOCALE` | no | `sl_SI` | Locale used for date/time formatting in the PDF. |
 | `APP_TIMEZONE` | no | `Europe/Ljubljana` | IANA timezone for the report's local timestamp. |
+| `HOST_HOSTNAME` | no | host's `COMPUTERNAME` / `HOSTNAME` (passed by `docker-compose.yml`) | Computer name shown on the PDF. Blank → row omitted. Inside a container `socket.gethostname()` returns the container ID, which is misleading, so the adapter refuses to fall back to it. |
+| `HOST_USERNAME` | no | host's `USERNAME` / `USER` (passed by `docker-compose.yml`) | OS user shown on the PDF. Blank → row omitted. Same Docker-aware logic as `HOST_HOSTNAME`. |
 
 The CLI reads `os.environ` first; values in `.env` are layered underneath without overwriting real env vars.
 
@@ -184,11 +184,14 @@ pick-at-random [--out OUT] [--ntp-server NTP_SERVER] csv_path
 The signed PDF contains:
 
 - Title: **Naključna razvrstitev**.
-- Metadata block: hostname, username, local execution time (Slovenian-locale formatted via Babel, e.g. `5. maj 2026, 14:32`).
+- Metadata block: hostname (when known), username (when known), local execution time (Slovenian-locale formatted via Babel, e.g. `5. maj 2026, 14:32`), and the input CSV filename (when supplied).
 - Workflow description (the canonical Slovenian explanation of the NTP-seeded shuffle).
 - NTP draw block: server, raw ISO timestamp, integer seed.
-- Results table: an ordinal column (`Zap. št.`) plus the original CSV headers, with the rows in their shuffled order.
+- **Digital-signature block (`Digitalni podpis`):** subject CN, issuer CN, validity start, validity end — extracted from the loaded PKCS#12 keystore. Rows whose underlying field is missing on the certificate are silently dropped.
+- Results table: an ordinal column (`Zap. št.`) plus the original CSV headers, with the rows in their shuffled order. The header row repeats on every page the table spans; the document is portrait A4 throughout.
 - One PAdES signature, anchored at the bottom of the document.
+
+All visible text is rendered in **Bitstream Vera Sans** (shipped with ReportLab) so that Slovenian diacritics — Č, č, Š, š, Ž, ž — render correctly. The standard PostScript fonts cover only WinAnsi and would show the Č/č pair as `?` boxes.
 
 ---
 

@@ -1,13 +1,19 @@
 """ReportLab-based PdfWriter rendering Slovenian content.
 
-The output is a single A4 document containing:
+The output is a single A4 portrait document containing:
 
 * Title (`"Naključna razvrstitev"`).
 * A two-column metadata table: hostname, username, local execution time
-  (formatted in `sl_SI` via Babel), workflow description.
+  (formatted in `sl_SI` via Babel), workflow description. Hostname and
+  username rows are omitted when their values are missing.
 * An NTP draw block: server, raw ISO timestamp, derived integer seed.
 * The shuffled rows rendered under the original CSV headers, with an
-  ordinal "Zaporedna št." column prepended.
+  ordinal "Zaporedna št." column prepended. The header row repeats on
+  every page the table spans.
+
+ReportLab's standard 14 PostScript fonts (Helvetica/Times/Courier) cover
+only WinAnsi, which lacks Č/č. The PDF therefore uses Bitstream Vera
+Sans, which ships with ReportLab and covers Latin Extended-A.
 
 The PDF leaves space at the bottom for the digital signature; the
 signature itself is added later by the :class:`Signer` adapter.
@@ -15,6 +21,7 @@ signature itself is added later by the :class:`Signer` adapter.
 
 from __future__ import annotations
 
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -23,8 +30,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    KeepTogether,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -38,15 +46,51 @@ _LABEL_TITLE = "Naključna razvrstitev"
 _LABEL_HOSTNAME = "Računalnik:"
 _LABEL_USERNAME = "Uporabnik:"
 _LABEL_LOCAL_TIME = "Čas izvedbe:"
+_LABEL_SOURCE_FILE = "Vhodna datoteka:"
 _LABEL_WORKFLOW = "Opis postopka:"
 _LABEL_NTP_BLOCK = "Vir naključja (NTP)"
 _LABEL_NTP_SERVER = "Strežnik:"
 _LABEL_NTP_TIMESTAMP = "Časovni žig:"
 _LABEL_NTP_SEED = "Seme (ns):"
+_LABEL_CERT_BLOCK = "Digitalni podpis"
+_LABEL_CERT_SUBJECT = "Imetnik (CN):"
+_LABEL_CERT_ISSUER = "Izdajatelj (CN):"
+_LABEL_CERT_VALID_FROM = "Veljavnost od:"
+_LABEL_CERT_VALID_TO = "Veljavnost do:"
 _LABEL_RESULTS = "Naključno razvrščeni vnosi"
 _LABEL_ORDINAL = "Zap. št."
 _LABEL_EMPTY = "(brez vnosov)"
 _LABEL_AUTHOR = "Pick at Random"
+
+_FONT_REGULAR = "PickVeraSans"
+_FONT_BOLD = "PickVeraSans-Bold"
+_FONT_REGULAR_FILE = "Vera.ttf"
+_FONT_BOLD_FILE = "VeraBd.ttf"
+
+_font_lock = threading.Lock()
+_fonts_registered = False
+
+
+def _register_fonts() -> None:
+    """Register Bitstream Vera Sans (regular + bold) once per process.
+
+    The TTFs ship with ReportLab and live on its default search path, so
+    no extra files need to be bundled with this project.
+    """
+    global _fonts_registered
+    if _fonts_registered:
+        return
+    with _font_lock:
+        if _fonts_registered:
+            return
+        pdfmetrics.registerFont(TTFont(_FONT_REGULAR, _FONT_REGULAR_FILE))
+        pdfmetrics.registerFont(TTFont(_FONT_BOLD, _FONT_BOLD_FILE))
+        pdfmetrics.registerFontFamily(
+            _FONT_REGULAR,
+            normal=_FONT_REGULAR,
+            bold=_FONT_BOLD,
+        )
+        _fonts_registered = True
 
 
 class ReportLabPdfWriter:
@@ -63,6 +107,8 @@ class ReportLabPdfWriter:
         shuffled_rows: tuple[Row, ...],
         metadata: ReportMetadata,
     ) -> None:
+        _register_fonts()
+
         path = Path(destination)
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -76,24 +122,27 @@ class ReportLabPdfWriter:
             title=_LABEL_TITLE,
             author=_LABEL_AUTHOR,
         )
-        styles = getSampleStyleSheet()
+        sample = getSampleStyleSheet()
         title_style = ParagraphStyle(
             "Title",
-            parent=styles["Title"],
+            parent=sample["Title"],
+            fontName=_FONT_BOLD,
             alignment=1,
             fontSize=18,
             spaceAfter=8,
         )
         section_style = ParagraphStyle(
             "Section",
-            parent=styles["Heading2"],
+            parent=sample["Heading2"],
+            fontName=_FONT_BOLD,
             fontSize=12,
             spaceBefore=10,
             spaceAfter=4,
         )
         body_style = ParagraphStyle(
             "Body",
-            parent=styles["BodyText"],
+            parent=sample["BodyText"],
+            fontName=_FONT_REGULAR,
             fontSize=10,
             leading=13,
         )
@@ -108,19 +157,54 @@ class ReportLabPdfWriter:
             Spacer(1, 4 * mm),
             Paragraph(_LABEL_NTP_BLOCK, section_style),
             self._ntp_table(metadata, body_style),
-            Spacer(1, 6 * mm),
-            Paragraph(_LABEL_RESULTS, section_style),
-            self._results_block(metadata, shuffled_rows, body_style),
         ]
+        cert_table = self._certificate_table(metadata, body_style)
+        if cert_table is not None:
+            story.append(Spacer(1, 4 * mm))
+            story.append(Paragraph(_LABEL_CERT_BLOCK, section_style))
+            story.append(cert_table)
+        story.append(Spacer(1, 6 * mm))
+        story.append(Paragraph(_LABEL_RESULTS, section_style))
+        story.append(self._results_block(metadata, shuffled_rows, body_style))
         doc.build(story)
 
     def _metadata_table(self, metadata: ReportMetadata, body: ParagraphStyle) -> Table:
         local_human = self._format_local_time(metadata.local_iso_timestamp)
-        rows: list[list[Paragraph]] = [
-            [Paragraph(_LABEL_HOSTNAME, body), Paragraph(metadata.hostname, body)],
-            [Paragraph(_LABEL_USERNAME, body), Paragraph(metadata.username, body)],
-            [Paragraph(_LABEL_LOCAL_TIME, body), Paragraph(local_human, body)],
-        ]
+        rows: list[list[Paragraph]] = []
+        if metadata.hostname:
+            rows.append([Paragraph(_LABEL_HOSTNAME, body), Paragraph(metadata.hostname, body)])
+        if metadata.username:
+            rows.append([Paragraph(_LABEL_USERNAME, body), Paragraph(metadata.username, body)])
+        rows.append([Paragraph(_LABEL_LOCAL_TIME, body), Paragraph(local_human, body)])
+        if metadata.source_filename:
+            rows.append(
+                [
+                    Paragraph(_LABEL_SOURCE_FILE, body),
+                    Paragraph(metadata.source_filename, body),
+                ]
+            )
+        return self._label_value_table(rows)
+
+    def _certificate_table(self, metadata: ReportMetadata, body: ParagraphStyle) -> Table | None:
+        info = metadata.certificate_info
+        if info is None:
+            return None
+        rows: list[list[Paragraph]] = []
+        if info.subject_cn:
+            rows.append([Paragraph(_LABEL_CERT_SUBJECT, body), Paragraph(info.subject_cn, body)])
+        if info.issuer_cn:
+            rows.append([Paragraph(_LABEL_CERT_ISSUER, body), Paragraph(info.issuer_cn, body)])
+        if info.valid_from_iso:
+            rows.append(
+                [
+                    Paragraph(_LABEL_CERT_VALID_FROM, body),
+                    Paragraph(info.valid_from_iso, body),
+                ]
+            )
+        if info.valid_to_iso:
+            rows.append([Paragraph(_LABEL_CERT_VALID_TO, body), Paragraph(info.valid_to_iso, body)])
+        if not rows:
+            return None
         return self._label_value_table(rows)
 
     def _ntp_table(self, metadata: ReportMetadata, body: ParagraphStyle) -> Table:
@@ -143,7 +227,7 @@ class ReportLabPdfWriter:
         metadata: ReportMetadata,
         shuffled_rows: tuple[Row, ...],
         body: ParagraphStyle,
-    ) -> KeepTogether | Paragraph:
+    ) -> Table | Paragraph:
         if not shuffled_rows:
             return Paragraph(_LABEL_EMPTY, body)
 
@@ -156,12 +240,16 @@ class ReportLabPdfWriter:
                 [Paragraph(str(index), body)] + [Paragraph(cell, body) for cell in row.values]
             )
 
+        # `repeatRows=1` keeps the header on every page the table spans;
+        # do NOT wrap in `KeepTogether`, which would collapse the table
+        # onto a single page and bypass the header repeat.
         table = Table(data_rows, repeatRows=1, hAlign="LEFT")
         table.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTNAME", (0, 0), (-1, 0), _FONT_BOLD),
+                    ("FONTNAME", (0, 1), (-1, -1), _FONT_REGULAR),
                     ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 4),
@@ -171,14 +259,15 @@ class ReportLabPdfWriter:
                 ]
             )
         )
-        return KeepTogether([table])
+        return table
 
     def _label_value_table(self, rows: list[list[Paragraph]]) -> Table:
         table = Table(rows, colWidths=[40 * mm, None], hAlign="LEFT")
         table.setStyle(
             TableStyle(
                 [
-                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTNAME", (0, 0), (0, -1), _FONT_BOLD),
+                    ("FONTNAME", (1, 0), (1, -1), _FONT_REGULAR),
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                     ("LEFTPADDING", (0, 0), (-1, -1), 0),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 4),

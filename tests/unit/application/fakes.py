@@ -10,7 +10,13 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 
-from pick_at_random.domain.models import Dataset, NtpDraw, ReportMetadata, Row
+from pick_at_random.domain.models import (
+    CertificateInfo,
+    Dataset,
+    NtpDraw,
+    ReportMetadata,
+    Row,
+)
 
 
 @dataclass
@@ -53,9 +59,20 @@ class RecordingPdfWriter:
 @dataclass
 class RecordingSigner:
     calls: list[str] = field(default_factory=list)
+    cert: CertificateInfo = field(
+        default_factory=lambda: CertificateInfo(
+            subject_cn="Test Signer",
+            issuer_cn="Test CA",
+            valid_from_iso="2024-01-01T00:00:00+00:00",
+            valid_to_iso="2030-01-01T00:00:00+00:00",
+        )
+    )
 
     def sign(self, pdf_path: str) -> None:
         self.calls.append(pdf_path)
+
+    def certificate_info(self) -> CertificateInfo:
+        return self.cert
 
 
 @dataclass
@@ -68,8 +85,8 @@ class FixedClock:
 
 @dataclass
 class FixedHostInfo:
-    hostname: str = "ws-001"
-    username: str = "blaz"
+    hostname: str | None = "ws-001"
+    username: str | None = "blaz"
 
 
 @dataclass

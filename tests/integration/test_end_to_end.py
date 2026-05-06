@@ -69,6 +69,26 @@ def _trust_anchor_from_pem(pem_bytes: bytes) -> asn1_x509.Certificate:
 
 @pytest.mark.integration
 class TestEndToEnd:
+    def test_certificate_info_extracted_from_keystore(
+        self, signing_keystore: SigningKeystore
+    ) -> None:
+        signer = PyHankoSigner(
+            p12_path=str(signing_keystore.p12_path),
+            p12_password=signing_keystore.p12_password,
+            field_name="PickAtRandomSig1",
+            reason="test",
+        )
+        info = signer.certificate_info()
+
+        assert info.subject_cn == "Pick at Random Self-Signed"
+        assert info.issuer_cn == "Pick at Random Self-Signed"
+        # Conftest builds the cert with notBefore = now - 1 hour and
+        # notAfter = now + 365 days; both must be ISO 8601 strings.
+        assert info.valid_from_iso is not None
+        assert info.valid_to_iso is not None
+        assert "T" in info.valid_from_iso
+        assert "T" in info.valid_to_iso
+
     def test_pipeline_produces_valid_signed_pdf(
         self, tmp_path: Path, signing_keystore: SigningKeystore
     ) -> None:
@@ -81,8 +101,6 @@ class TestEndToEnd:
             p12_password=signing_keystore.p12_password,
             field_name="PickAtRandomSig1",
             reason="Naključno razvrščanje seznama",
-            location="Ptuj, Slovenija",
-            contact="podpora@example.si",
         )
         use_case = ShuffleAndReportUseCase(
             csv_reader=SniffingCsvReader(),
@@ -90,7 +108,7 @@ class TestEndToEnd:
             pdf_writer=ReportLabPdfWriter(locale="sl_SI"),
             signer=signer,
             clock=SystemClock("Europe/Ljubljana"),
-            host_info=SystemHostInfo(),
+            host_info=SystemHostInfo(in_container=False),
             time_source=_StaticTimeSource(),
             workflow_description=NTP_SEEDED_DESCRIPTION_SL,
         )
@@ -133,8 +151,6 @@ class TestEndToEnd:
             p12_password=signing_keystore.p12_password,
             field_name="PickAtRandomSig1",
             reason="Naključno razvrščanje seznama",
-            location="Ptuj, Slovenija",
-            contact="podpora@example.si",
         )
 
         def _make_use_case() -> ShuffleAndReportUseCase:
@@ -144,7 +160,7 @@ class TestEndToEnd:
                 pdf_writer=ReportLabPdfWriter(locale="sl_SI"),
                 signer=signer,
                 clock=SystemClock("Europe/Ljubljana"),
-                host_info=SystemHostInfo(),
+                host_info=SystemHostInfo(in_container=False),
                 time_source=_StaticTimeSource(),
                 workflow_description=NTP_SEEDED_DESCRIPTION_SL,
             )

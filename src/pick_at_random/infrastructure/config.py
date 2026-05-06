@@ -113,8 +113,6 @@ class Settings:
     signature_p12_password: str
     signature_field_name: str
     signature_reason: str
-    signature_location: str
-    signature_contact: str
     input_dir: str
     output_dir: str
     ntp_server: str
@@ -122,6 +120,8 @@ class Settings:
     ntp_version: int
     app_locale: str
     app_timezone: str
+    host_hostname: str | None
+    host_username: str | None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -131,8 +131,6 @@ class Settings:
             signature_p12_password=_require(source, "SIGNATURE_P12_PASSWORD"),
             signature_field_name=_optional(source, "SIGNATURE_FIELD_NAME", "PickAtRandomSig1"),
             signature_reason=_require(source, "SIGNATURE_REASON"),
-            signature_location=_require(source, "SIGNATURE_LOCATION"),
-            signature_contact=_require(source, "SIGNATURE_CONTACT"),
             input_dir=_optional(source, "INPUT_DIR", "/data/in"),
             output_dir=_optional(source, "OUTPUT_DIR", "/data/out"),
             ntp_server=_require(source, "NTP_SERVER"),
@@ -140,4 +138,6 @@ class Settings:
             ntp_version=_ntp_version(source, "NTP_VERSION", 4),
             app_locale=_optional(source, "APP_LOCALE", "sl_SI"),
             app_timezone=_optional(source, "APP_TIMEZONE", "Europe/Ljubljana"),
+            host_hostname=source.get("HOST_HOSTNAME") or None,
+            host_username=source.get("HOST_USERNAME") or None,
         )

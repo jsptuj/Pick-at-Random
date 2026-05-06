@@ -10,7 +10,13 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from pick_at_random.domain.models import Dataset, NtpDraw, ReportMetadata, Row
+from pick_at_random.domain.models import (
+    CertificateInfo,
+    Dataset,
+    NtpDraw,
+    ReportMetadata,
+    Row,
+)
 
 
 @runtime_checkable
@@ -43,9 +49,17 @@ class PdfWriter(Protocol):
 
 @runtime_checkable
 class Signer(Protocol):
-    """Embeds a digital signature into an existing PDF in place."""
+    """Embeds a digital signature into an existing PDF in place.
+
+    The use case also asks the signer to expose its loaded certificate's
+    identity so that the same details that will appear in the PDF's
+    digital-signature panel can also be printed in plain text on the
+    report itself.
+    """
 
     def sign(self, pdf_path: str) -> None: ...  # pragma: no cover
+
+    def certificate_info(self) -> CertificateInfo: ...  # pragma: no cover
 
 
 @runtime_checkable
@@ -57,13 +71,19 @@ class Clock(Protocol):
 
 @runtime_checkable
 class HostInfo(Protocol):
-    """Exposes the OS hostname and the calling user's name."""
+    """Exposes the OS hostname and the calling user's name.
+
+    Either property may return ``None`` when the underlying value cannot
+    be trusted — for example when the process runs inside a container
+    and ``socket.gethostname()`` would only yield the container ID. The
+    ``PdfWriter`` adapter omits the corresponding row from the report.
+    """
 
     @property
-    def hostname(self) -> str: ...  # pragma: no cover
+    def hostname(self) -> str | None: ...  # pragma: no cover
 
     @property
-    def username(self) -> str: ...  # pragma: no cover
+    def username(self) -> str | None: ...  # pragma: no cover
 
 
 @runtime_checkable
